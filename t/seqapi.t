@@ -5,7 +5,7 @@ use warnings;
 
 use Test::DBIx::Class {
   schema_class => 'Fastadb::Schema',
-  resultsets => [ qw/Seq SeqType Release Molecule Division Species/ ],
+  resultsets => [ qw/Seq SeqType Release Molecule MoleculeSeq Division Species/ ],
 };
 use Test::Mojo;
 
@@ -38,18 +38,20 @@ fixtures_ok sub {
     seq_type => $type,
   });
 
-  Molecule->create({
+  my $mol1 = Molecule->create({
     stable_id => 'YHR055C',
     first_seen => 1,
-    seq => $seq,
     release => $release,
   });
-  Molecule->create({
+  MoleculeSeq->create({seq => $seq, molecule => $mol1});
+
+  my $mol2 = Molecule->create({
     stable_id => 'YER087C-B',
     first_seen => 1,
-    seq => $seq2,
     release => $release,
   });
+  MoleculeSeq->create({seq => $seq2, molecule => $mol2});
+
 },'Installed fixtures';
 
 # Set the application with the right schema. SQLite memory databases are a per driver thing
@@ -114,17 +116,19 @@ $t->get_ok('/sequence/bogus' => { Accept => 'text/plain'})
   ->content_is('Not Found');
 
 my $stable_id = 'YER087C-B';
-my $mol = Molecule->find({ stable_id => $stable_id});
-$t->get_ok('/metadata/'.$mol->seq->sha1 => { Accept => 'application/json'})
+my $mol = Molecule->find({ stable_id => $stable_id}, { join => {molecule_seqs => 'seq'}});
+my $seqs = [$mol->seqs->all];
+my $seq_local = $seqs->[0];
+$t->get_ok('/metadata/'.$seq_local->sha1 => { Accept => 'application/json'})
 	->status_is(200)
   ->json_is({
     metadata => {
-      id => $mol->seq->sha1,
+      id => $seq_local->sha1,
       length => 82,
       aliases => [
-        { alias => $mol->seq->md5},
-        { alias => $mol->seq->sha1 },
-        { alias => $mol->seq->sha256 },
+        { alias => $seq_local->md5},
+        { alias => $seq_local->sha1 },
+        { alias => $seq_local->sha256 },
         { alias => $stable_id },
       ]
     }

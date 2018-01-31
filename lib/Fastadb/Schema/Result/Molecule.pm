@@ -16,12 +16,6 @@ __PACKAGE__->add_columns(
 		is_auto_increment => 1,
     is_numeric => 1,
 	},
-	seq_id =>{
-		data_type => 'integer',
-		size      => 16,
-		is_nullable => 0,
-		is_numeric => 1,
-  },
 	release_id =>{
 		data_type => 'integer',
 		size      => 16,
@@ -53,7 +47,14 @@ __PACKAGE__->add_unique_constraint(
 
 __PACKAGE__->set_primary_key('molecule_id');
 
-__PACKAGE__->belongs_to(seq => 'Fastadb::Schema::Result::Seq', 'seq_id');
 __PACKAGE__->belongs_to(release => 'Fastadb::Schema::Result::Release', 'release_id');
+
+__PACKAGE__->has_many(
+  "molecule_seqs" => "Fastadb::Schema::Result::MoleculeSeq",
+	'seq_id',
+  { "foreign.molecule_id" => "self.molecule_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+__PACKAGE__->many_to_many('seqs', 'molecule_seqs', 'seq');
 
 1;

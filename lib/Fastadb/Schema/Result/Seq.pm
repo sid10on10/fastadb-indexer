@@ -57,7 +57,14 @@ __PACKAGE__->add_unique_constraint(
 
 __PACKAGE__->set_primary_key('seq_id');
 
-__PACKAGE__->has_many(molecules => 'Fastadb::Schema::Result::Molecule', 'seq_id');
+__PACKAGE__->has_many(
+  "molecule_seqs" => "Fastadb::Schema::Result::MoleculeSeq",
+	'molecule_id',
+  { "foreign.seq_id" => "self.seq_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+__PACKAGE__->many_to_many('molecules', 'molecule_seqs', 'molecule');
+
 __PACKAGE__->belongs_to(seq_type => 'Fastadb::Schema::Result::SeqType', 'seq_type_id');
 
 sub sqlt_deploy_hook {

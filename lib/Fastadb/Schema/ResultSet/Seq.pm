@@ -15,6 +15,7 @@ sub create_seq {
     $first_seen = 1;
     $seq_obj->insert();
   }
+  #TODO get the write working here (now a many to many relationship)
   my $molecule_obj = $seq_obj->find_or_create_related(
     'molecules',
     {
@@ -34,7 +35,7 @@ sub get_seq {
     $checksum_algorithm => $id
   },
   {
-    prefetch => 'molecules'
+    prefetch => {'molecule_seqs' => 'molecule'}
   });
 }
 
